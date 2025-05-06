@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#e30613">
+  <title>Scheda Sopralluogo</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background-color: #f9f9f9;
+    }
+    form {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      max-width: 800px;
+      margin: auto;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    fieldset {
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      margin-bottom: 20px;
+      padding: 15px;
+    }
+    legend {
+      font-weight: bold;
+      padding: 0 10px;
+    }
+    input[type="text"],
+    input[type="email"],
+    input[type="tel"],
+    input[type="date"],
+    input[type="time"],
+    textarea {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    input[type="file"] {
+      display: none;
+    }
+    .dynamic-list {
+      margin-bottom: 10px;
+    }
+    .dynamic-list input,
+    .dynamic-list textarea {
+      width: 100%;
+      display: block;
+      margin-bottom: 5px;
+    }
+    .add-btn {
+      margin-top: 10px;
+      background-color: #4CAF50;
+      color: white;
+      padding: 6px 12px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button {
+      background-color: #e30613;
+      color: white;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      width: 100%;
+    }
+    button:hover,
+    .add-btn:hover {
+      background-color: #c40000;
+    }
+    .foto-btn:hover {
+      background-color: #45a049;
+    }
+    .header-logo {
+      max-width: 100px;
+      margin-bottom: 20px;
+    }
+    .preview {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .preview img {
+      max-width: 100px;
+      max-height: 100px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      object-fit: cover;
+    }
+    .foto-controls {
+      margin-top: 10px;
+    }
+    .foto-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 5px;
+    }
+    .foto-btn {
+      background-color: #4CAF50;
+      color: white;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      width: auto;
+    }
+    .install-banner {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 12px;
+      background-color: #f8f9fa;
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+      text-align: center;
+      z-index: 1000;
+    }
+    .install-banner button {
+      display: inline-block;
+      width: auto;
+      margin-left: 12px;
+    }
+  </style>
+</head>
+<body>
+
+<div id="installBanner" class="install-banner">
+  <strong>Installa l'app sul tuo dispositivo!</strong>
+  <button id="installBtn">Installa</button>
+  <button id="closeBannerBtn" style="background-color: #6c757d;">No, grazie</button>
+</div>
+
+<form onsubmit="generaPDF(event)">
+  <img src="Logo Mainetti Solution con palazzo.PNG" alt="Logo" class="header-logo">
+
+  <fieldset>
+    <legend>Cliente</legend>
+    <label>Nome e Cognome:<br>
+      <input type="text" name="cliente_nome" required>
+    </label><br><br>
+    <label>Telefono:<br>
+      <input type="tel" name="cliente_telefono" required>
+    </label><br><br>
+    <label>Email (facoltativa):<br>
+      <input type="email" name="cliente_email">
+    </label><br><br>
+    <label>Indirizzo del lavoro:<br>
+      <input type="text" name="cliente_indirizzo" required>
+    </label>
+  </fieldset>
+
+  <fieldset>
+    <legend>Lavori da eseguire</legend>
+    <div id="lavoriContainer">
+      <div class="dynamic-list">
+        <textarea name="lavoro_descrizione[]" placeholder="Descrizione del lavoro" rows="3"></textarea>
+        <div class="foto-controls">
+          <input type="file" name="foto_lavoro_0[]" accept="image/*" capture="environment" multiple onchange="anteprimaFoto(this)">
+          <div class="foto-buttons">
+            <button type="button" class="foto-btn" onclick="attivaFotocamera(this)">Scatta Foto</button>
+            <button type="button" class="foto-btn" onclick="selezionaImmagini(this)">Seleziona Immagini</button>
+          </div>
+        </div>
+        <div class="preview"></div>
+      </div>
+    </div>
+    <button type="button" class="add-btn" onclick="aggiungiLavoro()">Aggiungi Lavoro</button>
+  </fieldset>
+
+  <fieldset>
+    <legend>Materiale necessario</legend>
+    <div id="materialiContainer">
+      <div class="dynamic-list">
+        <input type="text" name="materiale[]" placeholder="Materiale">
+      </div>
+    </div>
+    <button type="button" class="add-btn" onclick="aggiungiMateriale()">Aggiungi Materiale</button>
+  </fieldset>
+
+  <fieldset>
+    <legend>Attrezzi richiesti</legend>
+    <div id="attrezziContainer">
+      <div class="dynamic-list">
+        <input type="text" name="attrezzi[]" placeholder="Attrezzo">
+      </div>
+    </div>
+    <button type="button" class="add-btn" onclick="aggiungiAttrezzo()">Aggiungi Attrezzo</button>
+  </fieldset>
+
+  <fieldset>
+    <legend>Osservazioni</legend>
+    <textarea name="osservazioni" rows="4"></textarea>
+  </fieldset>
+
+  <fieldset>
+    <legend>Data prevista per il lavoro</legend>
+    <input type="date" name="data_lavoro" required>
+  </fieldset>
+
+  <fieldset>
+    <legend>Firma</legend>
+    <label>Collaboratore:<br>
+      <input type="text" name="collaboratore" required>
+    </label><br><br>
+    <label>Ora inizio:<br>
+      <input type="time" name="ora_inizio">
+    </label><br><br>
+    <label>Ora fine:<br>
+      <input type="time" name="ora_fine">
+    </label>
+  </fieldset>
+
+  <button type="submit">Salva / Esporta PDF</button>
+</form>
+
+<script>
+// Registrazione del Service Worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('service-worker.js')
+      .then(registration => {
+        console.log('Service Worker registrato con successo:', registration);
+      })
+      .catch(error => {
+        console.error('Errore nella registrazione del Service Worker:', error);
+      });
+  });
+}
+
+// Gestione banner di installazione
+let deferredPrompt;
+const installBanner = document.getElementById('installBanner');
+const installBtn = document.getElementById('installBtn');
+const closeBannerBtn = document.getElementById('closeBannerBtn');
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  // Previeni la visualizzazione automatica del prompt
+  e.preventDefault();
+  // Salva l'evento per poterlo attivare più tardi
+  deferredPrompt = e;
+  // Mostra il banner di installazione
+  installBanner.style.display = 'block';
+});
+
+installBtn.addEventListener('click', () => {
+  // Nascondi il banner
+  installBanner.style.display = 'none';
+  // Mostra il prompt di installazione
+  deferredPrompt.prompt();
+  // Attendi che l'utente risponda al prompt
+  deferredPrompt.userChoice.then((choiceResult) => {
+    if (choiceResult.outcome === 'accepted') {
+      console.log('Utente ha accettato l\'installazione');
+    } else {
+      console.log('Utente ha rifiutato l\'installazione');
+    }
+    // Reset della variabile
+    deferredPrompt = null;
+  });
+});
+
+closeBannerBtn.addEventListener('click', () => {
+  // Nascondi il banner
+  installBanner.style.display = 'none';
+});
+
+// Funzione per verificare se siamo su un dispositivo mobile
+function isMobileDevice() {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
+
+// Funzione per garantire che il logo sia caricato
+function assicuraLogoCaricato() {
+  return new Promise((resolve) => {
+    const logoImg = document.querySelector('.header-logo');
+    
+    if (!logoImg) {
+      console.error('Logo non trovato nel DOM');
+      resolve(null);
+      return;
+    }
+    
+    if (logoImg.complete && logoImg.naturalHeight !== 0) {
+      // Il logo è già caricato
+      console.log('Logo già caricato');
+      resolve(logoImg);
+    } else {
+      // Aspetta che il logo si carichi
+      logoImg.onload = () => {
+        console.log('Logo caricato con successo');
+        resolve(logoImg);
+      };
+      logoImg.onerror = () => {
+        console.error('Errore nel caricamento del logo');
+        resolve(null);
+      };
+      
+      // Se l'immagine non si carica entro 3 secondi, procedi senza logo
+      setTimeout(() => {
+        console.warn('Timeout nel caricamento del logo');
+        resolve(null);
+      }, 3000);
+    }
+  });
+}
+
+window.onload = function() {
+  // Precaricare il logo quando la pagina viene caricata
+  assicuraLogoCaricato().then(logo => {
+    console.log('Logo precaricato:', logo ? 'ok' : 'non disponibile');
+  });
+  
+  // Verifica se siamo su mobile e adatta l'interfaccia
+  if (isMobileDevice()) {
+    document.body.classList.add('mobile-device');
+  }
+};
+
+function aggiungiMateriale() {
+  const container = document.getElementById('materialiContainer');
+  const div = document.createElement('div');
+  div.className = 'dynamic-list';
+  div.innerHTML = '<input type="text" name="materiale[]" placeholder="Materiale">';
+  container.appendChild(div);
+}
+
+function aggiungiAttrezzo() {
+  const container = document.getElementById('attrezziContainer');
+  const div = document.createElement('div');
+  div.className = 'dynamic-list';
+  div.innerHTML = '<input type="text" name="attrezzi[]" placeholder="Attrezzo">';
+  container.appendChild(div);
+}
+
+let lavoroIndex = 1;
+function aggiungiLavoro() {
+  const container = document.getElementById('lavoriContainer');
+  const div = document.createElement('div');
+  div.className = 'dynamic-list';
+  const currentIndex = lavoroIndex;
+  div.innerHTML = `
+    <textarea name="lavoro_descrizione[]" placeholder="Descrizione del lavoro" rows="3"></textarea>
+    <div class="foto-controls">
+      <input type="file" name="foto_lavoro_${currentIndex}[]" accept="image/*" capture="environment" multiple onchange="anteprimaFoto(this)">
+      <div class="foto-buttons">
+        <button type="button" class="foto-btn" onclick="attivaFotocamera(this)">Scatta Foto</button>
+        <button type="button" class="foto-btn" onclick="selezionaImmagini(this)">Seleziona Immagini</button>
+      </div>
+    </div>
+    <div class="preview"></div>
+  `;
+  container.appendChild(div);
+  lavoroIndex++;
+}
+
+function attivaFotocamera(btn) {
+  const fileInput = btn.closest('.foto-controls').querySelector('input[type="file"]');
+  fileInput.setAttribute('capture', 'environment');
+  fileInput.removeAttribute('multiple');
+  fileInput.click();
+}
+
+function selezionaImmagini(btn) {
+  const fileInput = btn.closest('.foto-controls').querySelector('input[type="file"]');
+  fileInput.removeAttribute('capture');
+  fileInput.setAttribute('multiple', 'multiple');
+  fileInput.click();
+}
+
+function anteprimaFoto(input) {
+  // Trova il container di anteprima corretto
+  const previewContainer = input.closest('.dynamic-list').querySelector('.preview');
+  if (input.files) {
+    Array.from(input.files).forEach(file => {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = document.createElement('img');
+        img.src = e.target.result;
+        
+        // Crea un div per contenere l'immagine e il pulsante di eliminazione
+        const imgContainer = document.createElement('div');
+        imgContainer.style.position = 'relative';
+        imgContainer.style.display = 'inline-block';
+        imgContainer.style.margin = '5px';
+        
+        // Crea un pulsante di eliminazione
+        const deleteBtn = document.createElement('button');
+        deleteBtn.innerHTML = '&times;';
+        deleteBtn.style.position = 'absolute';
+        deleteBtn.style.top = '0';
+        deleteBtn.style.right = '0';
+        deleteBtn.style.backgroundColor = 'red';
+        deleteBtn.style.color = 'white';
+        deleteBtn.style.border = 'none';
+        deleteBtn.style.borderRadius = '50%';
+        deleteBtn.style.width = '20px';
+        deleteBtn.style.height = '20px';
+        deleteBtn.style.lineHeight = '20px';
+        deleteBtn.style.padding = '0';
+        deleteBtn.style.cursor = 'pointer';
+        
+        // Aggiungi l'evento click per eliminare l'immagine
+        deleteBtn.onclick = function() {
+          imgContainer.remove();
+        };
+        
+        imgContainer.appendChild(img);
+        imgContainer.appendChild(deleteBtn);
+        previewContainer.appendChild(imgContainer);
+      }
+      reader.readAsDataURL(file);
+    });
+  }
+}
+
+function generaPDF(event) {
+  event.preventDefault();
+  
+  // Prima assicuriamoci che il logo sia caricato
+  assicuraLogoCaricato().then(logoImg => {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    // Impostazioni di base
+    let yPos = 20;
+    const leftMargin = 20;
+    const lineHeight = 10;
+    
+    // Aggiungi logo se disponibile
+    if (logoImg) {
+      try {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = logoImg.naturalWidth;
+        canvas.height = logoImg.naturalHeight;
+        ctx.drawImage(logoImg, 0, 0);
+        const imgData = canvas.toDataURL('image/png');
+        
+        // Calcola le dimensioni proporzionali per il logo
+        const maxWidth = 60;
+        const maxHeight = 30;
+        let imgWidth = logoImg.naturalWidth;
+        let imgHeight = logoImg.naturalHeight;
+        
+        if (imgWidth > maxWidth) {
+          imgHeight = imgHeight * (maxWidth / imgWidth);
+          imgWidth = maxWidth;
+        }
+        
+        if (imgHeight > maxHeight) {
+          imgWidth = imgWidth * (maxHeight / imgHeight);
+          imgHeight = maxHeight;
+        }
+        
+        doc.addImage(imgData, 'PNG', leftMargin, yPos, imgWidth, imgHeight);
+        yPos += imgHeight + 10;
+        
+        console.log('Logo aggiunto al PDF con successo');
+      } catch (error) {
+        console.error('Errore durante l\'aggiunta del logo:', error);
+        // Continua senza il logo
+      }
+    } else {
+      console.warn('Logo non disponibile per il PDF');
+    }
+    
+    // Titolo
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text('SCHEDA SOPRALLUOGO', doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
+    yPos += lineHeight * 2;
+    
+    // Informazioni cliente
+    doc.setFontSize(14);
+    doc.text('Dati Cliente', leftMargin, yPos);
+    yPos += lineHeight;
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    const clienteNome = document.querySelector('input[name="cliente_nome"]').value;
+    doc.text(`Nome e Cognome: ${clienteNome}`, leftMargin, yPos);
+    yPos += lineHeight;
+    
+    const clienteTelefono = document.querySelector('input[name="cliente_telefono"]').value;
+    doc.text(`Telefono: ${clienteTelefono}`, leftMargin, yPos);
+    yPos += lineHeight;
+    
+    const clienteEmail = document.querySelector('input[name="cliente_email"]').value;
+    if (clienteEmail) {
+      doc.text(`Email: ${clienteEmail}`, leftMargin, yPos);
+      yPos += lineHeight;
+    }
+    
+    const clienteIndirizzo = document.querySelector('input[name="cliente_indirizzo"]').value;
+    doc.text(`Indirizzo lavoro: ${clienteIndirizzo}`, leftMargin, yPos);
+    yPos += lineHeight * 2;
+    
+    // Lavori da eseguire
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Lavori da eseguire', leftMargin, yPos);
+    yPos += lineHeight;
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    
+    const descrizioniLavori = document.querySelectorAll('textarea[name="lavoro_descrizione[]"]');
+    descrizioniLavori.forEach((desc, index) => {
+      if (desc.value.trim() !== '') {
+        // Controlla se c'è abbastanza spazio nella pagina
+        if (yPos > doc.internal.pageSize.getHeight() - 20) {
+          doc.addPage();
+          yPos = 20;
+        }
+        
+        doc.text(`Lavoro ${index + 1}: ${desc.value}`, leftMargin, yPos);
+        yPos += calculateTextHeight(doc, desc.value, doc.internal.pageSize.getWidth() - leftMargin * 2);
+        yPos += lineHeight;
+        
+        // Aggiungi le immagini per questo lavoro
+        const fotoContainer = document.querySelectorAll('.dynamic-list')[index].querySelector('.preview');
+        const immagini = fotoContainer.querySelectorAll('img');
+        
+        if (immagini.length > 0) {
+          doc.text("Fotografie:", leftMargin, yPos);
+          yPos += lineHeight;
+          
+          // Imposta limiti per le immagini
+          const imgWidth = 60;
+          const imgHeight = 40;
+          const imagesPerRow = 2;
+          let currentImgIndex = 0;
+          
+          for (let i = 0; i < immagini.length; i++) {
+            // Controlla se c'è abbastanza spazio nella pagina
+            if (yPos > doc.internal.pageSize.getHeight() - imgHeight - 10) {
+              doc.addPage();
+              yPos = 20;
+            }
+            
+            // Calcola la posizione X dell'immagine
+            const xPos = leftMargin + (currentImgIndex % imagesPerRow) * (imgWidth + 10);
+            
+            try {
+              doc.addImage(
+                immagini[i].src, 
+                'JPEG', 
+                xPos, 
+                yPos, 
+                imgWidth, 
+                imgHeight
+              );
+            } catch (e) {
+              console.error('Errore durante l\'aggiunta dell\'immagine', e);
+              // Continua con la prossima immagine
+            }
+            
+            currentImgIndex++;
+            
+            // Vai a una nuova riga dopo aver aggiunto il numero massimo di immagini per riga
+            if (currentImgIndex % imagesPerRow === 0) {
+              yPos += imgHeight + 10;
+            }
+          }
+          
+          // Assicurati di aggiornare la posizione Y se l'ultima riga di immagini non è completa
+          if (currentImgIndex % imagesPerRow !== 0) {
+            yPos += imgHeight + 10;
+          }
+        }
+      }
+    });
+    
+    // Materiale necessario
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Materiale necessario', leftMargin, yPos);
+    yPos += lineHeight;
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    
+    const materiali = document.querySelectorAll('input[name="materiale[]"]');
+    materiali.forEach((mat, index) => {
+      if (mat.value.trim() !== '') {
+        // Controlla se c'è abbastanza spazio nella pagina
+        if (yPos > doc.internal.pageSize.getHeight() - 20) {
+          doc.addPage();
+          yPos = 20;
+        }
+        
+        doc.text(`- ${mat.value}`, leftMargin, yPos);
+        yPos += lineHeight;
+      }
+    });
+    yPos += lineHeight;
+    
+    // Attrezzi richiesti
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Attrezzi richiesti', leftMargin, yPos);
+    yPos += lineHeight;
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    
+    const attrezzi = document.querySelectorAll('input[name="attrezzi[]"]');
+    attrezzi.forEach((att, index) => {
+      if (att.value.trim() !== '') {
+        // Controlla se c'è abbastanza spazio nella pagina
+        if (yPos > doc.internal.pageSize.getHeight() - 20) {
+          doc.addPage();
+          yPos = 20;
+        }
+        
+        doc.text(`- ${att.value}`, leftMargin, yPos);
+        yPos += lineHeight;
+      }
+    });
+    yPos += lineHeight;
+    
+    // Osservazioni
+    const osservazioni = document.querySelector('textarea[name="osservazioni"]').value;
+    if (osservazioni.trim() !== '') {
+      // Controlla se c'è abbastanza spazio nella pagina
+      if (yPos > doc.internal.pageSize.getHeight() - 40) {
+        doc.addPage();
+        yPos = 20;
+      }
+      
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Osservazioni', leftMargin, yPos);
+      yPos += lineHeight;
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'normal');
+      doc.text(osservazioni, leftMargin, yPos);
+      yPos += calculateTextHeight(doc, osservazioni, doc.internal.pageSize.getWidth() - leftMargin * 2);
+      yPos += lineHeight;
+    }
+    
+    // Data prevista
+    const dataLavoro = document.querySelector('input[name="data_lavoro"]').value;
+    // Controlla se c'è abbastanza spazio nella pagina
+    if (yPos > doc.internal.pageSize.getHeight() - 40) {
+      doc.addPage();
+      yPos = 20;
+    }
+    
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Data prevista per il lavoro', leftMargin, yPos);
+    yPos += lineHeight;
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    
+    // Formatta la data
+    const dataFormattata = formatDate(dataLavoro);
+    doc.text(`Data: ${dataFormattata}`, leftMargin, yPos);
+    yPos += lineHeight * 2;
+    
+    // Firma e orari
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Firma', leftMargin, yPos);
+    yPos += lineHeight;
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    
+    const collaboratore = document.querySelector('input[name="collaboratore"]').value;
+    doc.text(`Collaboratore: ${collaboratore}`, leftMargin, yPos);
+    yPos += lineHeight;
+    
+    const oraInizio = document.querySelector('input[name="ora_inizio"]').value;
+    if (oraInizio) {
+      doc.text(`Ora inizio: ${oraInizio}`, leftMargin, yPos);
+      yPos += lineHeight;
+    }
+    
+    const oraFine = document.querySelector('input[name="ora_fine"]').value;
+    if (oraFine) {
+      doc.text(`Ora fine: ${oraFine}`, leftMargin, yPos);
+      yPos += lineHeight;
+    }
+    
+    // Aggiungi data e ora di generazione
+    yPos = doc.internal.pageSize.getHeight() - 10;
+    const now = new Date();
+    doc.setFontSize(8);
+    doc.text(`Generato il: ${now.toLocaleDateString()} alle ${now.toLocaleTimeString()}`, leftMargin, yPos);
+    
+    // Salva il PDF
+    const fileName = `Sopralluogo_${clienteNome.replace(/\s+/g, '_')}_${dataFormattata.replace(/\//g, '-')}.pdf`;
+    doc.save(fileName);
+  }).catch(error => {
+    console.error('Errore durante la generazione del PDF:', error);
+    alert('Si è verificato un errore durante la generazione del PDF. Riprova.');
+  });
+}
+
+// Funzione per calcolare l'altezza del testo
+function calculateTextHeight(doc, text, maxWidth) {
+  const lines = doc.splitTextToSize(text, maxWidth);
+  return lines.length * 7; // 7 è un'approssimazione dell'altezza di una linea di testo
+}
+
+// Funzione per formattare la data
+function formatDate(dateString) {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  return date.toLocaleDateString('it-IT', { year: 'numeric', month: '2-digit', day: '2-digit' });
+}
